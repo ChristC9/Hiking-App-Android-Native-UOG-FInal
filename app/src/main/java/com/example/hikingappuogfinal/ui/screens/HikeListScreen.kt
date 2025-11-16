@@ -30,6 +30,8 @@ fun HikeListScreen(
     var q by remember { mutableStateOf("") }
     var showAdvanced by remember { mutableStateOf(false) }
 
+    var deleteTargetId by remember { mutableStateOf<Long?>(null) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -61,7 +63,12 @@ fun HikeListScreen(
                 singleLine = true, modifier = Modifier.fillMaxWidth()
             )
             Spacer(Modifier.height(8.dp))
-            HikeList(hikes = hikes, onOpen = onOpen, onEdit = onEdit)
+            HikeList(
+                hikes = hikes,
+                onOpen = onOpen,
+                onEdit = onEdit,
+                onDelete = { deleteTargetId = it }
+            )
         }
     }
 
@@ -71,13 +78,31 @@ fun HikeListScreen(
             onApply = { vm.setAdvanced(it); showAdvanced = false }
         )
     }
+
+    deleteTargetId?.let { id ->
+        AlertDialog(
+            onDismissRequest = { deleteTargetId = null },
+            confirmButton = {
+                TextButton(onClick = {
+                    vm.deleteHike(id)
+                    deleteTargetId = null
+                }) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = { TextButton(onClick = { deleteTargetId = null }) { Text("Cancel") } },
+            title = { Text("Delete hike?") },
+            text = { Text("This will remove the hike and all of its observations.") }
+        )
+    }
 }
 
 @Composable
 private fun HikeList(
     hikes: List<HikeWithObsCount>,
     onOpen: (Long)->Unit,
-    onEdit: (Long)->Unit
+    onEdit: (Long)->Unit,
+    onDelete: (Long)->Unit
 ) {
     if (hikes.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("No hikes yet. Tap + to add.") }
@@ -87,13 +112,20 @@ private fun HikeList(
                 ElevatedCard(
                     modifier = Modifier.fillMaxWidth().clickable { onOpen(item.hike.id) }
                 ) {
-                    Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Column(Modifier.weight(1f)) {
                             Text(item.hike.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             Text("${item.hike.location} • ${item.hike.date}")
                             Text("${item.hike.lengthKm} km • ${item.hike.difficulty} • Parking: ${if (item.hike.parkingAvailable) "Yes" else "No"}")
                         }
-                        TextButton(onClick = { onEdit(item.hike.id) }) { Text("Edit") }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TextButton(onClick = { onEdit(item.hike.id) }) { Text("Edit") }
+                            TextButton(onClick = { onDelete(item.hike.id) }) { Text("Delete") }
+                        }
                     }
                     if (item.obsCount > 0) {
                         Divider()

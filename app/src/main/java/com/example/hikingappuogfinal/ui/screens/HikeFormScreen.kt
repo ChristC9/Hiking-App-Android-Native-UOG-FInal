@@ -4,19 +4,7 @@ package com.example.hikingappuogfinal.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -32,10 +20,9 @@ import kotlinx.datetime.toLocalDateTime
 fun HikeFormScreen(
     vm: HikeFormViewModel,
     editId: Long?,
-    onDone: (Long)->Unit,
-    onCancel: ()->Unit
+    onDone: (Long) -> Unit,
+    onCancel: () -> Unit
 ) {
-    // Just delegate to the fixed compact screen to avoid duplicate logic
     HikeFormScreenCompact(vm = vm, editId = editId, onDone = onDone, onCancel = onCancel)
 }
 
@@ -43,19 +30,36 @@ fun HikeFormScreen(
 fun HikeFormScreenCompact(
     vm: HikeFormViewModel,
     editId: Long?,
-    onDone: (Long)->Unit,
-    onCancel: ()->Unit
+    onDone: (Long) -> Unit,
+    onCancel: () -> Unit
 ) {
     LaunchedEffect(editId) { if (editId != null) vm.loadForEdit(editId) }
+
+    // form drives recomposition
     val form by vm.form.collectAsState()
-    var step by remember { mutableStateOf(1) } // 1=edit, 2=confirm
-    val validation = vm.validate()
+
+    var step by remember { mutableStateOf(1) }      // 1 = edit, 2 = confirm
+    var attemptedSubmit by remember { mutableStateOf(false) }
+
+    // Recompute validation whenever `form` changes
+    val validation = remember(form) { vm.validate() }
     val canContinue = validation.errors.isEmpty()
 
-    fun err(key: String) = validation.errors[key]
+    // Only show error text after user presses "Review"
+    fun err(key: String): String? =
+        if (attemptedSubmit) validation.errors[key] else null
 
-    Scaffold(topBar = { TopAppBar(title = { Text(if (editId == null) "New Hike" else "Edit Hike") }) }) { pad ->
-        Column(Modifier.padding(pad).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = { TopAppBar(title = { Text(if (editId == null) "New Hike" else "Edit Hike") }) }
+    ) { pad ->
+        Column(
+            Modifier
+                .padding(pad)
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             if (step == 1) {
                 OutlinedTextField(
                     value = form.name,
@@ -64,7 +68,9 @@ fun HikeFormScreenCompact(
                     isError = err("name") != null,
                     singleLine = true
                 )
-                if (err("name") != null) Text(err("name")!!, color = MaterialTheme.colorScheme.error)
+                if (err("name") != null) {
+                    Text(err("name")!!, color = MaterialTheme.colorScheme.error)
+                }
 
                 OutlinedTextField(
                     value = form.location,
@@ -73,21 +79,31 @@ fun HikeFormScreenCompact(
                     isError = err("location") != null,
                     singleLine = true
                 )
-                if (err("location") != null) Text(err("location")!!, color = MaterialTheme.colorScheme.error)
+                if (err("location") != null) {
+                    Text(err("location")!!, color = MaterialTheme.colorScheme.error)
+                }
 
-                var showDatePicker by remember { mutableStateOf(false) }
-                OutlinedTextField(
-                    value = form.date?.toString().orEmpty(),
-                    onValueChange = {},
-                    label = { Text("Date*") },
-                    isError = err("date") != null,
-                    readOnly = true,
-                    singleLine = true,
+                // Date (looks like a field, opens date picker on tap)
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { showDatePicker = true }
-                )
-                if (err("date") != null) Text(err("date")!!, color = MaterialTheme.colorScheme.error)
+                ) {
+                    OutlinedTextField(
+                        value = form.date?.toString().orEmpty(),
+                        onValueChange = {},
+                        label = { Text("Date*") },
+                        isError = err("date") != null,
+                        readOnly = true,
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = false
+                    )
+                }
+                if (err("date") != null) {
+                    Text(err("date")!!, color = MaterialTheme.colorScheme.error)
+                }
+
                 if (showDatePicker) {
                     val state = rememberDatePickerState(
                         initialSelectedDateMillis = form.date?.toEpochMillis()
@@ -103,9 +119,7 @@ fun HikeFormScreenCompact(
                                     }
                                     showDatePicker = false
                                 }
-                            ) {
-                                Text("OK")
-                            }
+                            ) { Text("OK") }
                         },
                         dismissButton = {
                             TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
@@ -127,7 +141,9 @@ fun HikeFormScreenCompact(
                         label = { Text("Parking No") }
                     )
                 }
-                if (err("parking") != null) Text(err("parking")!!, color = MaterialTheme.colorScheme.error)
+                if (err("parking") != null) {
+                    Text(err("parking")!!, color = MaterialTheme.colorScheme.error)
+                }
 
                 OutlinedTextField(
                     value = form.lengthKm,
@@ -136,7 +152,9 @@ fun HikeFormScreenCompact(
                     isError = err("length") != null,
                     singleLine = true
                 )
-                if (err("length") != null) Text(err("length")!!, color = MaterialTheme.colorScheme.error)
+                if (err("length") != null) {
+                    Text(err("length")!!, color = MaterialTheme.colorScheme.error)
+                }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(Difficulty.EASY, Difficulty.MODERATE, Difficulty.HARD).forEach { d ->
@@ -147,7 +165,9 @@ fun HikeFormScreenCompact(
                         )
                     }
                 }
-                if (err("difficulty") != null) Text(err("difficulty")!!, color = MaterialTheme.colorScheme.error)
+                if (err("difficulty") != null) {
+                    Text(err("difficulty")!!, color = MaterialTheme.colorScheme.error)
+                }
 
                 OutlinedTextField(
                     value = form.description,
@@ -172,12 +192,28 @@ fun HikeFormScreenCompact(
                         modifier = Modifier.weight(1f)
                     )
                 }
-                if (err("elev") != null) Text("Elevation: ${err("elev")}", color = MaterialTheme.colorScheme.error)
-                if (err("group") != null) Text("Group size: ${err("group")}", color = MaterialTheme.colorScheme.error)
+                if (err("elev") != null) {
+                    Text("Elevation: ${err("elev")}", color = MaterialTheme.colorScheme.error)
+                }
+                if (err("group") != null) {
+                    Text("Group size: ${err("group")}", color = MaterialTheme.colorScheme.error)
+                }
 
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
                     TextButton(onClick = onCancel) { Text("Cancel") }
-                    Button(onClick = { if (canContinue) step = 2 }, enabled = canContinue) { Text("Review") }
+
+                    // Always enabled; click triggers validation + shows "Required"
+                    Button(
+                        onClick = {
+                            attemptedSubmit = true
+                            if (canContinue) step = 2
+                        }
+                    ) {
+                        Text("Review")
+                    }
                 }
             } else {
                 Text("Confirm details", style = MaterialTheme.typography.titleMedium)
@@ -188,13 +224,24 @@ fun HikeFormScreenCompact(
                 Text("Parking: ${if (form.parking == true) "Yes" else "No"}")
                 Text("Length: ${form.lengthKm} km")
                 Text("Difficulty: ${form.difficulty}")
-                if (form.description.isNotBlank()) Text("Description: ${form.description}")
-                if (form.elevationGainM.isNotBlank()) Text("Elevation gain: ${form.elevationGainM} m")
-                if (form.groupSize.isNotBlank()) Text("Group size: ${form.groupSize}")
+                if (form.description.isNotBlank()) {
+                    Text("Description: ${form.description}")
+                }
+                if (form.elevationGainM.isNotBlank()) {
+                    Text("Elevation gain: ${form.elevationGainM} m")
+                }
+                if (form.groupSize.isNotBlank()) {
+                    Text("Group size: ${form.groupSize}")
+                }
 
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
                     TextButton(onClick = { step = 1 }) { Text("Back to edit") }
-                    Button(onClick = { vm.save(onDone) }) { Text(if (form.id == null) "Save" else "Update") }
+                    Button(onClick = { vm.save(onDone) }) {
+                        Text(if (form.id == null) "Save" else "Update")
+                    }
                 }
             }
         }

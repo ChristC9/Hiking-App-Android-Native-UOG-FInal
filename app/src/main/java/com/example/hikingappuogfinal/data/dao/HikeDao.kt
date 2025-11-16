@@ -11,7 +11,8 @@ interface HikeDao {
     @Update suspend fun update(hike: Hike)
     @Delete suspend fun delete(hike: Hike)
     @Query("DELETE FROM hikes") suspend fun deleteAll()
-
+    @Query("DELETE FROM hikes WHERE id = :id")
+    suspend fun deleteById(id: Long)
     @Query("""
     SELECT h.*, (SELECT COUNT(*) FROM observations o WHERE o.hikeId = h.id) AS obsCount
     FROM hikes h

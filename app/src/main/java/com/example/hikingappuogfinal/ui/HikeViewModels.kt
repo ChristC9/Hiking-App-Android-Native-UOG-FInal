@@ -3,6 +3,7 @@ package com.example.hikingappuogfinal.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.room.RoomOpenHelper
 import com.example.hikingappuogfinal.data.model.Difficulty
 import com.example.hikingappuogfinal.data.model.Hike
 import com.example.hikingappuogfinal.data.model.HikeWithObsCount
@@ -15,7 +16,6 @@ import kotlinx.datetime.*
 class HikeListViewModel(private val repo: HikeRepository): ViewModel() {
     private val searchPrefix = MutableStateFlow<String>("")
     private val advanced = MutableStateFlow<AdvancedQuery?>(null)
-
     data class AdvancedQuery(
         val name: String? = null,
         val location: String? = null,
@@ -25,6 +25,11 @@ class HikeListViewModel(private val repo: HikeRepository): ViewModel() {
         val endDate: LocalDate? = null
     )
 
+    fun deleteHike(id: Long) {
+        viewModelScope.launch {
+            repo.deleteHikeById(id)
+        }
+    }
     val hikes: StateFlow<List<HikeWithObsCount>> =
         combine(searchPrefix, advanced) { q, adv ->
             if (adv != null) {

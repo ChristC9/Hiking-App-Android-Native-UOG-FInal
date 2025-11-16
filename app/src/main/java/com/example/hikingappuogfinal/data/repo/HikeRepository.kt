@@ -21,6 +21,9 @@ class HikeRepository(
     suspend fun updateHike(h: Hike) = hikeDao.update(h)
     suspend fun deleteHike(h: Hike) = hikeDao.delete(h)
     suspend fun resetAll() = hikeDao.deleteAll()
+    suspend fun deleteHikeById(id: Long) {
+        hikeDao.deleteById(id)
+    }
 
     fun observationsFor(hikeId: Long): Flow<List<Observation>> = obsDao.observeForHike(hikeId)
     suspend fun insertObservation(o: Observation) = obsDao.insert(o)

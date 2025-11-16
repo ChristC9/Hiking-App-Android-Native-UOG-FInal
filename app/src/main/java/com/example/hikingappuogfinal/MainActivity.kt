@@ -17,8 +17,6 @@ import com.example.hikingappuogfinal.ui.HikeListViewModel
 import com.example.hikingappuogfinal.ui.VmFactory
 import com.example.hikingappuogfinal.ui.screens.HikeDetailScreen
 import com.example.hikingappuogfinal.ui.screens.HikeFormScreen
-// If your form screen is named HikeFormScreenCompact, import that instead:
-// import com.example.hikingappuogfinal.ui.screens.HikeFormScreenCompact
 import com.example.hikingappuogfinal.ui.screens.HikeListScreen
 import com.example.hikingappuogfinal.ui.theme.MHikeTheme
 
